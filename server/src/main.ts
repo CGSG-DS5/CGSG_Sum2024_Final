@@ -1,125 +1,105 @@
-import * as fs from 'fs';
-import { addAbortSignal } from 'stream';
+import morgan from 'morgan';
+import { star, starManager, star_fetched } from './stars';
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
 
-const txt = fs
-  .readFileSync('server/bin/readme.txt', 'ascii')
-  .toString()
-  .split('\n');
+const app = express();
+app.use(morgan('combined'));
+app.use(express.static('.'));
 
-interface catalogHeaderLine {
-  start: number;
-  end: number;
-  format: string;
-  units: string;
-  label: string;
-  explanations: string;
-}
+const server = http.createServer(app);
+const io = new Server(server);
 
-interface catalogHeader {
-  name: string;
-  lines: catalogHeaderLine[];
-}
+let SM = new starManager();
 
-interface catalogData {
-  [name: string]: string;
-}
+SM.init('bright_star');
 
-interface fileCatalog {
-  header: catalogHeader;
-  data: catalogData[];
-}
+const clients = [];
 
-let files: fileCatalog[] = [];
+io.on('connection', (socket) => {
+  console.log(`Client connected with id: ${socket.id}`);
 
-const READING_FREE = 0;
-const READING_START = 1;
-const READING_DESC = 2;
-
-let curState = READING_FREE;
-let curFile = 0;
-
-function readDescLine(line: string) {
-  if (line[7] != ' ') {
-    let start: number;
-    let end: number;
-    let units: string;
-    let label: string;
-
-    if (line.charAt(4) == '-') {
-      start = Number(line.substring(1, 4)) - 1;
-      end = Number(line.substring(5, 8)) - 1;
-    } else start = end = Number(line.substring(5, 8)) - 1;
-
-    if (line.substring(17, 20) == '---') {
-      units = '---';
-      label = line.substring(23, 33).replace(/\s+/g, '');
-    } else {
-      units = line.substring(15, 24).replace(/\s+/g, '');
-      label = line.substring(24, 33).replace(/\s+/g, '');
-    }
-
-    let l: catalogHeaderLine = {
-      start: start,
-      end: end,
-      format: line.substring(8, 15).replace(/\s+/g, ''),
-      units: units,
-      label: label,
-      explanations: line.substring(33, line.length - 1)
-    };
-
-    files[files.length - 1].header.lines.push(l);
-  } else {
-    files[files.length - 1].header.lines[
-      files[files.length - 1].header.lines.length - 1
-    ].explanations += line.substring(33, line.length - 1);
-  }
-}
-
-let skip = 0;
-
-txt.forEach((line) => {
-  switch (curState) {
-    case READING_FREE:
-      if (line.startsWith('Byte-by-byte Description of file:')) {
-        curState = READING_START;
-        skip = 0;
-
-        files.push({
-          header: { name: line.split(' ')[4], lines: [] },
-          data: []
-        });
+  socket.on(
+    'fetch_stars',
+    (
+      MinA: number,
+      MinE: number,
+      MaxA: number,
+      MaxE: number,
+      lmst: number,
+      lat: number
+    ) => {
+      interface star_both {
+        s1: star;
+        s2: star_fetched;
       }
-      break;
 
-    case READING_START:
-      skip++;
-      if (skip == 3) curState = READING_DESC;
-      break;
+      const arr: star_both[] = [];
+      const response: star_fetched[] = [];
 
-    case READING_DESC:
-      if (line.startsWith('----------')) {
-        curFile++;
-        curState = READING_FREE;
-      } else readDescLine(line);
-      break;
-  }
+      let sinD, cosD, sinH, cosH, sinE, cosE, sinA, cosA, el, az;
+      const sinL = Math.sin((lat * Math.PI) / 180),
+        cosL = Math.cos((lat * Math.PI) / 180);
+
+      SM.stars.forEach((s) => {
+        sinD = Math.sin((s.decl * Math.PI) / 180);
+        cosD = Math.cos((s.decl * Math.PI) / 180);
+        sinH = Math.sin(((lmst - s.rasc) * Math.PI) / 12);
+        cosH = Math.cos(((lmst - s.rasc) * Math.PI) / 12);
+
+        sinE = sinL * sinD + cosL * cosD * cosH;
+        cosE = Math.sqrt(1 - sinE * sinE);
+
+        sinA = (-cosD * sinH) / cosE;
+        cosA = (cosL * sinD - sinL * cosD * cosH) / cosE;
+
+        el = Math.asin(sinE);
+        az = Math.atan2(sinA, cosA);
+
+        if (MinA <= MaxA) {
+          if (
+            el > MinE - 0.01 &&
+            el < MaxE + 0.01 &&
+            az > MinA - 0.01 &&
+            az < MaxA + 0.01
+          )
+            arr.push({
+              s1: s,
+              s2: { sinA: sinA, cosA: cosA, sinE: sinE, cosE: cosE }
+            });
+        } else {
+          if (
+            (el > MinE - 0.01 &&
+              el < MaxE + 0.01 &&
+              az > MinA - 0.01 &&
+              az < 2 * Math.PI + 0.01) ||
+            (el > MinE - 0.01 &&
+              el < MaxE + 0.01 &&
+              az > -2 * Math.PI - 0.01 &&
+              az < MaxA + 0.01)
+          )
+            arr.push({
+              s1: s,
+              s2: { sinA: sinA, cosA: cosA, sinE: sinE, cosE: cosE }
+            });
+        }
+      });
+
+      arr.sort((a: star_both, b: star_both) => {
+        return b.s1.magn - a.s1.magn;
+      });
+
+      const n = Math.min(200, arr.length);
+      for (let i = 0; i < n; i++) response.push(arr[i].s2);
+
+      socket.emit('get_stars', response);
+    }
+  );
 });
 
-files.forEach((f) => {
-  const fr = fs
-    .readFileSync('server/bin/' + f.header.name, 'binary')
-    .toString()
-    .split('\n');
-
-  let j = 0;
-  fr.forEach((line) => {
-    if (line == '') return;
-    f.data[j] = {};
-    f.header.lines.forEach((p) => {
-      f.data[j][p.label] = line.substring(p.start, p.end + 1);
-    });
-    j++;
-  });
+server.listen(process.env.PORT || 5000, () => {
+  const t = server.address();
+  if (!t || typeof t == 'string') return;
+  console.log('Server started on port' + t.port + ':)');
 });
-
-fs.writeFileSync('out.json', JSON.stringify(files));
