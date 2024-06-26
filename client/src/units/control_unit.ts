@@ -95,19 +95,6 @@ export class control_unit extends unit {
 
     if (this.scale > 100) this.scale = 100;
     if (this.scale < 0) this.scale = 0;
-    sx =
-      (((Number(ani.keys[VK.RBUTTON]) * ani.mdX * ani.wp) / ani.frameW) *
-        Dist) /
-      ani.projDist;
-    sy =
-      (((Number(ani.keys[VK.RBUTTON]) * -ani.mdY * ani.hp) / ani.frameH) *
-        Dist) /
-      ani.projDist;
-
-    let dv = ani.right.mulNum(sx).add(ani.up.mulNum(sy));
-
-    ani.at = ani.at.add(dv);
-    ani.loc = ani.loc.add(dv);
 
     ani.camSet(
       matrRotateX(Elevator)

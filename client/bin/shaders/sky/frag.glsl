@@ -57,7 +57,7 @@ struct star
   vec4 SinACosASinECosE;
 };
 
-#define MAX_STARS 200
+#define MAX_STARS 150
 
 uniform Stars // 3
 {
@@ -71,8 +71,8 @@ void main( void )
   // OutColor = vec4(vec2(gl_FragCoord.xy) * abs(sin(Time)) / vec2(FrameW, FrameH), 0.0, 1.0);
 
   float
-    px = ((2.0 * gl_FragCoord.x + 1.0) / (FrameW - 1.0) - 1.0) * Wp,
-    py = ((2.0 * gl_FragCoord.y + 1.0) / (FrameH - 1.0) - 1.0) * Hp;
+    px = ((2.0 * gl_FragCoord.x + 1.0) / (FrameW - 1.0) - 1.0) * Wp / 2.0,
+    py = ((2.0 * gl_FragCoord.y + 1.0) / (FrameH - 1.0) - 1.0) * Hp / 2.0;
   vec3
     RayDir = CamDir * ProjDist + px * CamRight + py * CamUp,
     RayOrg = CamLoc + RayDir;

@@ -49,11 +49,19 @@ export class timer extends camera {
     this.oldTime = t;
 
     const date = new Date();
-    const y = date.getUTCFullYear();
+    let y = date.getUTCFullYear();
+    let m = date.getUTCMonth();
+    let d = date.getUTCDay();
+
+    if (m == 1 || m == 2) {
+      y--;
+      m += 12;
+    }
+
     let jd =
       Math.floor(365.25 * (y + 4716)) +
-      Math.floor(30.6001 * (date.getUTCMonth() + 1)) +
-      date.getUTCDate() +
+      Math.floor(30.6001 * (m + 1)) +
+      d +
       2 -
       (3 * y) / 400 -
       1524.5;

@@ -5,6 +5,7 @@ import { topology, vertex } from '../anim/rnd/topo';
 import { _vec3, vec3 } from '../mth/mthvec3';
 import { buffer, uniform_buffer } from '../anim/rnd/buffer';
 import { matrIdentity } from '../mth/mthmatr';
+import { VK } from '../anim/input';
 
 export class sky_unit extends unit {
   pr: number = 0;
@@ -18,7 +19,7 @@ export class sky_unit extends unit {
   }
 
   init = (ani: anim) => {
-    this.uboStars = new uniform_buffer('Stars', 4 * 4 * 200, 3);
+    this.uboStars = new uniform_buffer('Stars', 4 * 4 * 150, 3);
 
     this.socket.on('connect', () => {
       console.log(this.socket.id);
@@ -63,35 +64,52 @@ export class sky_unit extends unit {
     this.pr = ani.primCreate(new topology.tristrip(vert), mtl);
   };
   response = (ani: anim) => {
-    const min = ani.dir
-      .mulNum(ani.projDist)
-      .add(ani.right.mulNum(-ani.wp / 2))
-      .add(ani.up.mulNum(-ani.hp / 2))
-      .norm();
-    const max = ani.dir
-      .mulNum(ani.projDist)
-      .add(ani.right.mulNum(ani.wp / 2))
-      .add(ani.up.mulNum(ani.hp / 2))
-      .norm();
+    if (ani.keysClick[VK.LBUTTON]) {
+      let px, py, r;
 
-    let minE = Math.asin(min.y);
-    let maxE = Math.asin(max.y);
+      px = (((2.0 * ani.mX + 1.0) / (ani.frameW - 1.0) - 1.0) * ani.wp) / 2.0;
+      py = ((1 - (2.0 * ani.mY + 1.0) / (ani.frameH - 1.0)) * ani.hp) / 2.0;
+      r = ani.dir
+        .mulNum(ani.projDist)
+        .add(ani.right.mulNum(px))
+        .add(ani.up.mulNum(py))
+        .norm();
 
-    const cosMinE = Math.sqrt(1 - min.y * min.y);
-    const cosMaxE = Math.sqrt(1 - max.y * max.y);
+      let sinD, cosD, sinH, cosH, sinL, cosL, sinE, cosE, sinA, cosA;
 
-    let minA = Math.atan2(min.z / cosMinE, min.x / cosMinE);
-    let maxA = Math.atan2(max.z / cosMaxE, max.x / cosMaxE);
+      sinL = Math.sin((ani.curLat * Math.PI) / 180);
+      cosL = Math.cos((ani.curLat * Math.PI) / 180);
 
-    this.socket.emit(
-      'fetch_stars',
-      minA,
-      minE,
-      maxA,
-      maxE,
-      ani.curLMST,
-      ani.curLat
-    );
+      sinE = r.y;
+      cosE = Math.sqrt(1 - r.y * r.y);
+      sinA = r.z / cosE;
+      cosA = r.x / cosE;
+
+      sinD = sinL * sinE + cosL * cosE * cosA;
+      cosD = Math.sqrt(1 - sinD * sinD);
+
+      sinH = (cosL * sinE - sinL * cosE * cosA) / cosD;
+      cosH = (-cosE * sinA) / cosD;
+
+      // sinH = (-sinA * cosE) / cosD;
+      // cosH = (sinE - sinD * sinL) / (cosD * cosL);
+
+      let ra = (Math.atan2(sinH, cosH) / Math.PI) * 12;
+      // if (ra < 0) ra += 24;
+
+      console.log('px: ' + px + '; py: ' + py);
+      console.log(
+        'Ra: ' +
+          (ani.curLMST - ra) +
+          '; De: ' +
+          (Math.asin(sinD) / Math.PI) * 180
+      );
+      let az = (Math.atan2(sinA, cosA) / Math.PI) * 180;
+      if (az < 0) az += 360;
+      console.log('Az: ' + az + '; El: ' + (Math.asin(sinE) / Math.PI) * 180);
+    }
+
+    this.socket.emit('fetch_stars', ani.matrVP, ani.curLMST, ani.curLat);
 
     ani.primDraw(
       this.pr,
@@ -100,22 +118,3 @@ export class sky_unit extends unit {
     );
   };
 }
-
-// let sinD, cosD, sinH, cosH, sinE, cosE, sinA, cosA;
-// const sinL = Math.sin(ani.curLat),
-//   cosL = Math.cos(ani.curLat);
-
-// this.allStarsList.forEach((s) => {
-//   sinD = Math.sin(s.decl);
-//   cosD = Math.cos(s.decl);
-//   sinH = Math.sin(ani.curLMST - s.rasc);
-//   cosH = Math.cos(ani.curLMST - s.rasc);
-
-//   sinE = sinL * sinD + cosL * cosD * cosH;
-//   cosE = Math.sqrt(1 - sinE * sinE);
-
-//   sinA = (-cosD * sinH) / cosE;
-//   cosA = (cosL * sinD - sinL * cosD * cosH) / cosE;
-
-//   arr.push(sinA, cosA, sinE, cosE);
-// });
