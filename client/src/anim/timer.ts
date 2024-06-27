@@ -50,31 +50,35 @@ export class timer extends camera {
 
     const date = new Date();
     let y = date.getUTCFullYear();
-    let m = date.getUTCMonth();
-    let d = date.getUTCDay();
+    let m = date.getUTCMonth() + 1;
+    const d = date.getUTCDate();
+    const h =
+      date.getUTCHours() +
+      (date.getUTCMinutes() + date.getUTCSeconds() / 60) / 60;
 
-    if (m == 1 || m == 2) {
-      y--;
-      m += 12;
+    if (m <= 2) {
+      y = y - 1;
+      m = m + 12;
     }
+    const A = Math.floor(y / 100);
+    const B = 2 - A + Math.floor(A / 4);
+    const C = Math.floor(365.25 * y);
+    const D = Math.floor(30.6001 * (m + 1));
 
-    let jd =
-      Math.floor(365.25 * (y + 4716)) +
-      Math.floor(30.6001 * (m + 1)) +
-      d +
-      2 -
-      (3 * y) / 400 -
-      1524.5;
+    const jd = B + C + D + d + 1720994.5;
 
-    const t1 = (jd - 2451545.0) / 36525;
-    const theta0 =
-      280.46061837 +
-      360.98564736629 * (jd - 2451545) +
-      0.000387933 * t1 * t1 -
-      (t1 * t1 * t1) / 38710000;
-    this.gmst = theta0 % 360;
-    if (this.gmst < 0) this.gmst += 360;
-    this.gmst = this.gmst / 15;
+    const S = jd - 2451545;
+    const T = S / 36525;
+
+    let T0 = 6.697374558 + 2400.051336 * T + 0.000025862 * Math.pow(T, 2);
+    if (T0 < 0) T0 += 24 * Math.abs(Math.floor(T0 / 24));
+    else T0 -= 24 * Math.abs(Math.floor(T0 / 24));
+
+    T0 += h * 1.002737909;
+    if (T0 < 0) T0 += 24;
+    if (T0 > 24) T0 -= 24;
+
+    this.gmst = T0;
 
     // lmst = gmst + longtitude / 15
   }

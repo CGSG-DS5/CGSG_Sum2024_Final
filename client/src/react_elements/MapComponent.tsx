@@ -10,7 +10,6 @@ export function MapComponent(props: { ani: anim }) {
     props.ani.curLon = e.lngLat.lng;
     props.ani.curLat = e.lngLat.lat;
     props.ani.isMap = false;
-    props.ani.curLMST = props.ani.gmst + props.ani.curLon / 15;
 
     e.preventDefault();
   }

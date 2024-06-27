@@ -42,6 +42,11 @@ export class anim extends render {
   response() {
     super.response();
 
+    this.curLMST = (this.gmst + this.curLon / 15) / 24;
+    this.curLMST -= Math.floor(this.curLMST);
+    if (this.curLMST < 0) this.curLMST++;
+    this.curLMST *= 24;
+
     this.uboUtils?.update(
       new Float32Array([
         this.localTime,

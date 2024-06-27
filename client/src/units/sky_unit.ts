@@ -88,25 +88,25 @@ export class sky_unit extends unit {
       sinD = sinL * sinE + cosL * cosE * cosA;
       cosD = Math.sqrt(1 - sinD * sinD);
 
-      sinH = (cosL * sinE - sinL * cosE * cosA) / cosD;
-      cosH = (-cosE * sinA) / cosD;
+      sinH = (-cosE * sinA) / cosD;
+      cosH = (cosL * sinE - sinL * cosE * cosA) / cosD;
 
       // sinH = (-sinA * cosE) / cosD;
       // cosH = (sinE - sinD * sinL) / (cosD * cosL);
 
       let ra = (Math.atan2(sinH, cosH) / Math.PI) * 12;
-      // if (ra < 0) ra += 24;
+      if (ra < 0) ra += 24;
+      ra = ani.curLMST - ra;
+
+      if (ra < 0) ra += 24;
+      else if (ra >= 24) ra -= 24;
 
       console.log('px: ' + px + '; py: ' + py);
-      console.log(
-        'Ra: ' +
-          (ani.curLMST - ra) +
-          '; De: ' +
-          (Math.asin(sinD) / Math.PI) * 180
-      );
+      console.log('Ra: ' + ra + '; De: ' + (Math.asin(sinD) / Math.PI) * 180);
       let az = (Math.atan2(sinA, cosA) / Math.PI) * 180;
       if (az < 0) az += 360;
       console.log('Az: ' + az + '; El: ' + (Math.asin(sinE) / Math.PI) * 180);
+      console.log('LMST: ' + ani.curLMST);
     }
 
     this.socket.emit('fetch_stars', ani.matrVP, ani.curLMST, ani.curLat);

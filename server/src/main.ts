@@ -33,16 +33,24 @@ io.on('connection', (socket) => {
     const response: star_fetched[] = [];
 
     const vp = _matr(matrVP.a);
-    let sinD, cosD, sinH, cosH, sinE, cosE, sinA, cosA;
-    const sinL = Math.sin((lat * Math.PI) / 180),
-      cosL = Math.cos((lat * Math.PI) / 180);
+    let ra, de, sinD, cosD, sinH, cosH, sinE, cosE, sinA, cosA;
+    const lat1 = (lat * Math.PI) / 180;
+    const sinL = Math.sin(lat1),
+      cosL = Math.cos(lat1);
     let r: vec3, p: vec3;
 
     SM.stars.forEach((s) => {
-      sinD = Math.sin((s.decl * Math.PI) / 180);
-      cosD = Math.cos((s.decl * Math.PI) / 180);
-      sinH = Math.sin(((lmst - s.rasc) * Math.PI) / 12);
-      cosH = Math.cos(((lmst - s.rasc) * Math.PI) / 12);
+      ra = lmst - s.rasc;
+      if (ra < 0) ra += 24;
+      else if (ra >= 24) ra -= 24;
+      ra *= Math.PI / 12;
+
+      de = (s.decl * Math.PI) / 180;
+
+      sinD = Math.sin(de);
+      cosD = Math.cos(de);
+      sinH = Math.sin(ra);
+      cosH = Math.cos(ra);
 
       sinE = sinL * sinD + cosL * cosD * cosH;
       cosE = Math.sqrt(1 - sinE * sinE);
