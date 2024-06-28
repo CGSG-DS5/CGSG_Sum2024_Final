@@ -104,7 +104,7 @@ void main( void )
     t = mix(t, x, x > t);
   }
 
-  if (t > 0.0)
+  if (t > 0.5)
     OutColor = vec4(texture(CubeMap0, RayDir).xyz + vec3(pow(t / 1.0, 100000.0)), 1);
   else
     OutColor = vec4(texture(CubeMap0, RayDir).xyz, 1);

@@ -1,3 +1,4 @@
+import { star } from '../../../server/src/stars';
 import { vec3 } from '../mth/mthvec3';
 import { render } from './rnd/rnd';
 
@@ -13,6 +14,9 @@ export class anim extends render {
   curLat: number = 0;
   curLon: number = 0;
   curLMST: number = 0;
+
+  curStar: star | null = null;
+  fetchInfo: string = '';
 
   addUnit(uni: unit) {
     this.units.push(uni);

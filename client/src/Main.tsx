@@ -6,6 +6,9 @@ import { _vec3, vec3 } from './mth/mthvec3';
 import { control_unit } from './units/control_unit';
 import { sky_unit } from './units/sky_unit';
 import { MapComponent } from './react_elements/MapComponent';
+import { DataComponent } from './react_elements/DataComponent';
+import { StarComponent } from './react_elements/StarComponent';
+import { SearchComponent } from './react_elements/SearchComponent';
 
 async function main() {
   const rootElement = document.getElementById('root');
@@ -58,7 +61,10 @@ async function main() {
 
     root.render(
       <div>
+        <DataComponent ani={ani}></DataComponent>
         <MapComponent ani={ani}></MapComponent>
+        <StarComponent ani={ani}></StarComponent>
+        <SearchComponent ani={ani}></SearchComponent>
       </div>
     );
 

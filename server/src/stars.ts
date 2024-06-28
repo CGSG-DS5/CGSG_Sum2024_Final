@@ -39,7 +39,7 @@ export class starManager {
         name = s['Name'].trim().replace(/\s+/g, ' ');
         if (name == '') name = s['DM'].trim().replace(/\s+/g, ' ');
         rasc =
-          (Number(s['RAh']) / 60 + Number(s['RAm'])) / 60 + Number(s['RAs']);
+          (Number(s['RAs']) / 60 + Number(s['RAm'])) / 60 + Number(s['RAh']);
         decl =
           (s['DE-'] == '-' ? -1 : 1) *
           (Number(s['DEd']) + (Number(s['DEm']) + Number(s['DEs']) / 60) / 60);

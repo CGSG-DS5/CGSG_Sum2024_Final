@@ -16,6 +16,8 @@ export class timer extends camera {
   private pauseTime: number = 0;
   private frameCounter: number = 0;
 
+  strDate: string = '2024-06-08 03:50';
+
   init() {
     let date: Date = new Date();
     this.startTime =
@@ -48,7 +50,7 @@ export class timer extends camera {
 
     this.oldTime = t;
 
-    const date = new Date();
+    const date = new Date(this.strDate.replace('T', ' '));
     let y = date.getUTCFullYear();
     let m = date.getUTCMonth() + 1;
     const d = date.getUTCDate();

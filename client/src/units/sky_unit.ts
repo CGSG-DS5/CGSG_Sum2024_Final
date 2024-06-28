@@ -10,8 +10,10 @@ import { VK } from '../anim/input';
 export class sky_unit extends unit {
   pr: number = 0;
   starsList: number[] = [];
+  starsData: star[] = [];
   uboStars: buffer | null = null;
   socket;
+  lastUpd: number = 0;
 
   constructor() {
     super();
@@ -24,13 +26,22 @@ export class sky_unit extends unit {
     this.socket.on('connect', () => {
       console.log(this.socket.id);
 
-      this.socket.on('get_stars', (stars: star_fetched[]) => {
+      this.socket.on('get_stars', (stars: star_fetched[], starsd: star[]) => {
+        this.starsData = starsd;
+
         this.starsList = [];
+        const t: number[] = [];
         for (let i = 0; i < stars.length; i++) {
           this.starsList.push(stars[i].sinA);
           this.starsList.push(stars[i].cosA);
           this.starsList.push(stars[i].sinE);
           this.starsList.push(stars[i].cosE);
+        }
+        for (let i = stars.length; i < 150; i++) {
+          t.push(0);
+          t.push(0);
+          t.push(0);
+          t.push(0);
         }
 
         this.uboStars?.update(
@@ -38,6 +49,12 @@ export class sky_unit extends unit {
           0,
           this.starsList.length * 4
         );
+        if (t.length != 0)
+          this.uboStars?.update(
+            new Float32Array(t),
+            this.starsList.length * 4,
+            t.length * 4
+          );
       });
     });
 
@@ -101,15 +118,52 @@ export class sky_unit extends unit {
       if (ra < 0) ra += 24;
       else if (ra >= 24) ra -= 24;
 
-      console.log('px: ' + px + '; py: ' + py);
       console.log('Ra: ' + ra + '; De: ' + (Math.asin(sinD) / Math.PI) * 180);
       let az = (Math.atan2(sinA, cosA) / Math.PI) * 180;
       if (az < 0) az += 360;
       console.log('Az: ' + az + '; El: ' + (Math.asin(sinE) / Math.PI) * 180);
-      console.log('LMST: ' + ani.curLMST);
+
+      let minDist = -1,
+        min = -1;
+      for (let i = 0; i < this.starsList.length; i += 4) {
+        const sith = this.starsList[i + 0];
+        const coth = this.starsList[i + 1];
+        const siph = this.starsList[i + 2];
+        const coph = this.starsList[i + 3];
+
+        const r1 = _vec3(coph * coth, siph, coph * sith);
+        const x = r1.dot(r);
+
+        if (min == -1 || minDist < x) {
+          minDist = x;
+          min = i / 4;
+        }
+      }
+
+      if (min != -1) {
+        console.log('Name: ' + this.starsData[min].name);
+        console.log(
+          'Ra (sky): ' +
+            this.starsData[min].rasc +
+            '; De (sky): ' +
+            this.starsData[min].decl
+        );
+        if (minDist >= 0.9999) ani.curStar = this.starsData[min];
+        else ani.curStar = null;
+      }
     }
 
-    this.socket.emit('fetch_stars', ani.matrVP, ani.curLMST, ani.curLat);
+    if (ani.globalTime - this.lastUpd > 1) {
+      this.lastUpd = ani.globalTime;
+
+      this.socket.emit(
+        'fetch_stars',
+        ani.matrVP,
+        ani.curLMST,
+        ani.curLat,
+        ani.fetchInfo
+      );
+    }
 
     ani.primDraw(
       this.pr,

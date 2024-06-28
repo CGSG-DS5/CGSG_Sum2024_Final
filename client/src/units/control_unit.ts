@@ -52,7 +52,7 @@ export class control_unit extends unit {
       this.PrevH = ani.frameH;
     }
 
-    if (ani.keysClick['P'.charCodeAt(0)]) ani.isPause = !ani.isPause;
+    // if (ani.keysClick['P'.charCodeAt(0)]) ani.isPause = !ani.isPause;
 
     Dist = ani.at.sub(ani.loc).len();
     cosT = (ani.loc.y - ani.at.y) / Dist;
@@ -67,14 +67,14 @@ export class control_unit extends unit {
     Azimuth +=
       (((ani.globalDeltaTime *
         (30 * Number(ani.keys[VK.LBUTTON]) * ani.mdX +
-          47 * (Number(ani.keys[VK.LEFT]) - Number(ani.keys[VK.RIGHT])) * 10)) /
+          0 * (Number(ani.keys[VK.LEFT]) - Number(ani.keys[VK.RIGHT])) * 10)) /
         5) *
         (120 * Math.pow(1.3, -this.scale))) /
       120;
     Elevator +=
       (((ani.globalDeltaTime *
         (30 * Number(ani.keys[VK.LBUTTON]) * ani.mdY +
-          47 * (Number(ani.keys[VK.UP]) - Number(ani.keys[VK.DOWN]) * 10))) /
+          0 * (Number(ani.keys[VK.UP]) - Number(ani.keys[VK.DOWN]) * 10))) /
         5) *
         (120 * Math.pow(1.3, -this.scale))) /
       120;
