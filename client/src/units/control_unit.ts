@@ -26,7 +26,7 @@ export class control_unit extends unit {
   response = (ani: anim) => {
     let Dist, plen, cosT, sinT, cosP, sinP, Azimuth, Elevator, sx, sy;
 
-    if (ani.keysClick['C'.charCodeAt(0)]) ani.isMap = true;
+    if (ani.keys[VK.MENU] && ani.keysClick['C'.charCodeAt(0)]) ani.isMap = true;
     if (ani.isMap) return;
 
     if (
